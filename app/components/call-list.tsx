@@ -120,6 +120,7 @@ export default function Home() {
             <TabsList className="mb-6">
                 <TabsTrigger value="summary" className="rounded-none rounded-t data-[state=active]:border-b-2 data-[state=active]:border-white">Summary</TabsTrigger>
                 <TabsTrigger value="transcript" className="rounded-none rounded-t data-[state=active]:border-b-2 data-[state=active]:border-white">Transcript</TabsTrigger>
+                <TabsTrigger value="extracted_variables" className="rounded-none rounded-t data-[state=active]:border-b-2 data-[state=active]:border-white">Extracted Variables</TabsTrigger>
             </TabsList>
             <TabsContent value="summary">
                 {/* Summary */}
@@ -223,6 +224,128 @@ export default function Home() {
                   </ScrollArea>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="extracted_variables">
+                {/* Extracted Variables */}
+              {selectedCall.extracted_vars && (() => {
+                // Parse extracted_vars - handle both string and object cases
+                let parsedVars: Record<string, any> = {};
+                try {
+                  if (typeof selectedCall.extracted_vars === 'string') {
+                    parsedVars = JSON.parse(selectedCall.extracted_vars);
+                  } else if (typeof selectedCall.extracted_vars === 'object') {
+                    parsedVars = selectedCall.extracted_vars as Record<string, any>;
+                  }
+                } catch (e) {
+                  console.error('Error parsing extracted_vars:', e);
+                }
+
+                // Helper to format key names (snake_case to Title Case)
+                const formatKey = (key: string): string => {
+                  return key
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                };
+
+                // Helper to format values
+                const formatValue = (value: any): React.ReactNode => {
+                  if (value === null || value === undefined) {
+                    return <span className="text-foreground/50">N/A</span>;
+                  }
+                  if (typeof value === 'number') {
+                    return <span className="font-mono">{value.toLocaleString()}</span>;
+                  }
+                  if (typeof value === 'boolean') {
+                    return (
+                      <Badge variant={value ? 'success' : 'default'} className="text-xs">
+                        {value ? 'Yes' : 'No'}
+                      </Badge>
+                    );
+                  }
+                  if (Array.isArray(value)) {
+                    if (value.length === 0) return <span className="text-foreground/50">Empty array</span>;
+                    return (
+                      <span className="break-words">
+                        {value.map((item, idx) => (
+                          <span key={idx}>
+                            {String(item)}
+                            {idx < value.length - 1 && ', '}
+                          </span>
+                        ))}
+                      </span>
+                    );
+                  }
+                  const stringValue = String(value);
+                  return <span className="break-words">{stringValue}</span>;
+                };
+
+                const entries = Object.entries(parsedVars).filter(([_, value]) => {
+                  // Filter out object types (but keep arrays, strings, numbers, booleans, null)
+                  return typeof value !== 'object' || value === null || Array.isArray(value);
+                });
+
+                return entries.length > 0 ? (
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 mb-4">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                          />
+                        </svg>
+                        Extracted Variables
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {entries.map(([key, value]) => (
+                          <MetadataItem
+                            key={key}
+                            label={formatKey(key)}
+                            value={formatValue(value)}
+                          />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                          />
+                        </svg>
+                        Extracted Variables
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-foreground/60 text-center py-4">
+                        No extracted variables available
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
             </TabsContent>
             </Tabs>
 
