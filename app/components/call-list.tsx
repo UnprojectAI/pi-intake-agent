@@ -47,16 +47,21 @@ function parseTranscript(transcript: string | null): Array<{ role: "AI" | "User"
   if (!transcript) return [];
   
   const messages: Array<{ role: "AI" | "User"; message: string }> = [];
-  const lines = transcript.split("\\n");
+  // Normalize escaped newlines and split on actual newlines
+  const normalized = transcript.replace(/\\n/g, "\n");
+  const lines = normalized.split(/\r?\n/);
   
   for (const line of lines) {
-    if (line.startsWith("AI: ")) {
-      messages.push({ role: "AI", message: line.substring(4).trim() });
-    } else if (line.startsWith("User: ")) {
-      messages.push({ role: "User", message: line.substring(6).trim() });
-    } else if (line.trim() && messages.length > 0) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue; // Skip empty lines
+    
+    if (trimmedLine.startsWith("AI: ")) {
+      messages.push({ role: "AI", message: trimmedLine.substring(4).trim() });
+    } else if (trimmedLine.startsWith("User: ")) {
+      messages.push({ role: "User", message: trimmedLine.substring(6).trim() });
+    } else if (messages.length > 0) {
       // Continue previous message if line doesn't start with role
-      messages[messages.length - 1].message += " " + line.trim();
+      messages[messages.length - 1].message += " " + trimmedLine;
     }
   }
   
